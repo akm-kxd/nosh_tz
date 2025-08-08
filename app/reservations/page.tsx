@@ -31,6 +31,7 @@ export default function ReservationsPage() {
   });
 
   useEffect(() => {
+    // загрузка списка броней
     fetch("/api/reservations")
       .then((r) => r.json())
       .then(setItems);

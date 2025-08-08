@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { emitEvent } from "@/app/api/_lib/events";
 
-// Start a seating session (walk-in or from reservation)
+// старт посадки (walk-in или из брони)
 export async function POST(req: NextRequest) {
   const { tableId, reservationId, partySize } = await req.json();
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   return Response.json(session);
 }
 
-// End a seating session
+// завершение посадки
 export async function PUT(req: NextRequest) {
   const { sessionId, tableId } = await req.json();
   const session = sessionId

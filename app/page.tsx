@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+// простая типизация для таблиц и брони
 type Table = {
   id: number;
   name: string;
@@ -11,8 +12,17 @@ type Table = {
   status: "AVAILABLE" | "OCCUPIED" | "RESERVED";
 };
 
+type Reservation = {
+  id: number;
+  tableId: number | null;
+  startsAt: string; // ISO
+  status: "PENDING" | "CONFIRMED" | "SEATED" | "CANCELLED";
+  partySize: number;
+};
+
 export default function FloorPlanPage() {
   const [tables, setTables] = useState<Table[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
   const colors = useMemo(
     () => ({
@@ -24,9 +34,9 @@ export default function FloorPlanPage() {
   );
 
   useEffect(() => {
-    fetch("/api/tables")
-      .then((r) => r.json())
-      .then(setTables);
+    // начальная загрузка
+    fetch("/api/tables").then((r) => r.json()).then(setTables);
+    fetch("/api/reservations").then((r) => r.json()).then(setReservations);
 
     const ev = new EventSource("/api/events");
     ev.onmessage = (e) => {
@@ -36,11 +46,29 @@ export default function FloorPlanPage() {
           fetch("/api/tables")
             .then((r) => r.json())
             .then(setTables);
+        } else if (msg.type === "reservations:update") {
+          fetch("/api/reservations").then((r) => r.json()).then(setReservations);
         }
       } catch {}
     };
     return () => ev.close();
   }, []);
+
+  // Вычисляем RESERVED: если есть ближайшая подтверждённая бронь на стол в ближайшие 2 часа
+  const computed = useMemo(() => {
+    const now = Date.now();
+    const twoHours = 2 * 60 * 60 * 1000;
+    const upcoming = reservations.filter(
+      (r) => r.tableId && r.status !== "CANCELLED" && r.status !== "SEATED" && new Date(r.startsAt).getTime() - now <= twoHours && new Date(r.startsAt).getTime() >= now
+    );
+    const reservedByTable = new Set(upcoming.map((r) => r.tableId as number));
+    return tables.map((t) => {
+      if (t.status === "AVAILABLE" && reservedByTable.has(t.id)) {
+        return { ...t, status: "RESERVED" as const };
+      }
+      return t;
+    });
+  }, [tables, reservations]);
 
   return (
     <div className="space-y-4">
@@ -68,7 +96,7 @@ export default function FloorPlanPage() {
       </div>
 
       <div className="relative w-full h-[520px] border rounded bg-neutral-50">
-        {tables.map((t) => (
+        {computed.map((t) => (
           <div
             key={t.id}
             className={`absolute ${colors[t.status]} text-white rounded flex items-center justify-center cursor-pointer select-none`}
@@ -81,6 +109,7 @@ export default function FloorPlanPage() {
                   body: JSON.stringify({ tableId: t.id, partySize: t.capacity }),
                 });
               } else {
+                // завершить текущую посадку, стол освободится
                 await fetch("/api/seating", {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },

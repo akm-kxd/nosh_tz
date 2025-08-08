@@ -1,5 +1,7 @@
 import prisma from "@/app/lib/prisma";
 
+// простая агрегация метрик по дням
+
 export async function GET() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
