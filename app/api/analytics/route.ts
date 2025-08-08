@@ -1,5 +1,8 @@
 import prisma from "@/app/lib/prisma";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 // простая агрегация метрик по дням
 
 export async function GET() {

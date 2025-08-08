@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { emitEvent } from "@/app/api/_lib/events";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const reservations = await prisma.reservation.findMany({
     orderBy: { startsAt: "asc" },

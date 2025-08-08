@@ -3,6 +3,9 @@ import prisma from "@/app/lib/prisma";
 import { emitEvent } from "@/app/api/_lib/events";
 
 // старт посадки (walk-in или из брони)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const { tableId, reservationId, partySize } = await req.json();
 

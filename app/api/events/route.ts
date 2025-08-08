@@ -1,6 +1,7 @@
 import { eventBus } from "@/app/api/_lib/events";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const encoder = new TextEncoder();
