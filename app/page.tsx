@@ -1,103 +1,99 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useMemo, useState } from "react";
+
+type Table = {
+  id: number;
+  name: string;
+  capacity: number;
+  posX: number;
+  posY: number;
+  status: "AVAILABLE" | "OCCUPIED" | "RESERVED";
+};
+
+export default function FloorPlanPage() {
+  const [tables, setTables] = useState<Table[]>([]);
+
+  const colors = useMemo(
+    () => ({
+      AVAILABLE: "bg-green-500",
+      OCCUPIED: "bg-red-500",
+      RESERVED: "bg-yellow-500",
+    }),
+    []
+  );
+
+  useEffect(() => {
+    fetch("/api/tables")
+      .then((r) => r.json())
+      .then(setTables);
+
+    const ev = new EventSource("/api/events");
+    ev.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === "tables:update") {
+          fetch("/api/tables")
+            .then((r) => r.json())
+            .then(setTables);
+        }
+      } catch {}
+    };
+    return () => ev.close();
+  }, []);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Floor</h1>
+        <div className="flex gap-2">
+          <button
+            className="px-3 py-1.5 rounded bg-black text-white text-sm"
+            onClick={async () => {
+              const name = `T${tables.length + 1}`;
+              const capacity = 2 + (tables.length % 4);
+              const posX = (tables.length * 70) % 600;
+              const posY = Math.floor(tables.length / 8) * 70;
+              const created = await fetch("/api/tables", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, capacity, posX, posY }),
+              }).then((r) => r.json());
+              setTables((t) => [...t, created]);
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Add Table
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      <div className="relative w-full h-[520px] border rounded bg-neutral-50">
+        {tables.map((t) => (
+          <div
+            key={t.id}
+            className={`absolute ${colors[t.status]} text-white rounded flex items-center justify-center cursor-pointer select-none`}
+            style={{ left: t.posX, top: t.posY, width: 60, height: 60 }}
+            onClick={async () => {
+              if (t.status === "AVAILABLE") {
+                await fetch("/api/seating", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ tableId: t.id, partySize: t.capacity }),
+                });
+              } else {
+                await fetch("/api/seating", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ tableId: t.id }),
+                });
+              }
+            }}
+            title={`${t.name} • ${t.capacity}p`}
+          >
+            {t.name}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

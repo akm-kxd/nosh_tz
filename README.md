@@ -1,3 +1,34 @@
+Restaurant Table Management System (Next.js)
+
+Setup
+- Requirements: Node 20+, npm
+- Install deps: `npm i`
+- DB: Prisma + SQLite (local file)
+- Migrate: `npx prisma migrate dev`
+- Seed sample tables: `npm run prisma:seed`
+- Dev: `npm run dev`
+
+App Structure
+- Floor: `/` — visual grid with tables (click to seat walk-in / end seating)
+- Reservations: `/reservations` — create, confirm, cancel, and seat reservations
+- Analytics: `/analytics` — daily covers, peak hour, average dining time
+- Realtime: server-sent events at `/api/events` broadcast updates
+
+Tech
+- Next.js App Router, Tailwind, Prisma (SQLite)
+- API routes: `/api/tables`, `/api/reservations`, `/api/seating`, `/api/analytics`
+- Models: Table, Reservation, SeatingSession
+
+Product Brief (1 page)
+- Target user persona: floor manager / host(ess) at small to mid-size restaurants
+- Key problem solved: quick overview of table status, fast walk-in seating, and reservation handling in one place
+- Success metrics: time-to-seat, reduced double-booking, table turn time, covers per service
+
+Development Process (1 page)
+- AI usage: scaffolding Next.js + Tailwind, Prisma schema design, API routes, and basic UI wiring
+- Biggest help: schema iteration and API boilerplate, lint fixes, and wiring SSE across pages
+- Time saved: ~2–3 hours vs fully manual implementation
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Dining tables in the restaurant
+model Table {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  capacity  Int
+  posX      Int       @default(0)
+  posY      Int       @default(0)
+  status    TableStatus @default(AVAILABLE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  reservations      Reservation[]
+  seatingSessions   SeatingSession[]
+}
+
+/// Customer reservations
+model Reservation {
+  id              Int            @id @default(autoincrement())
+  guestName       String
+  phone           String
+  partySize       Int
+  startsAt        DateTime
+  endsAt          DateTime?
+  status          ReservationStatus @default(PENDING)
+  specialRequests String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  table    Table? @relation(fields: [tableId], references: [id])
+  tableId  Int?
+
+  seatingSession SeatingSession?
+}
+
+/// Tracks actual seating sessions for walk-ins or reservations
+model SeatingSession {
+  id             Int       @id @default(autoincrement())
+  table          Table     @relation(fields: [tableId], references: [id])
+  tableId        Int
+  reservation    Reservation? @relation(fields: [reservationId], references: [id])
+  reservationId  Int? @unique
+  partySize      Int
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  CANCELLED
+}
